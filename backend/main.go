@@ -1,0 +1,277 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+// Modelos de datos
+type Station struct {
+	DeviceID    string `json:"device_id"`
+	UPN         string `json:"upn"`
+	Status      string `json:"status"`
+	ConnectedAt string `json:"connected_at"`
+}
+
+type EventMessage struct {
+	Type     string              `json:"type"`
+	DeviceID string              `json:"device_id,omitempty"`
+	UPN      string              `json:"upn,omitempty"`
+	Status   string              `json:"status,omitempty"`
+	Time     string              `json:"time,omitempty"`
+	Stations map[string]*Station `json:"stations,omitempty"`
+}
+
+// Hub en memoria RAM con exclusión mutua
+type Hub struct {
+	sync.RWMutex
+	stations   map[string]*Station
+	dashboards map[*websocket.Conn]bool
+}
+
+var hub = Hub{
+	stations:   make(map[string]*Station),
+	dashboards: make(map[*websocket.Conn]bool),
+}
+
+// Notificar a todos los navegadores abiertos
+func (h *Hub) Broadcast(msg EventMessage) {
+	h.Lock()
+	defer h.Unlock()
+
+	raw, _ := json.Marshal(msg)
+	for client := range h.dashboards {
+		err := client.WriteMessage(websocket.TextMessage, raw)
+		if err != nil {
+			client.Close()
+			delete(h.dashboards, client)
+		}
+	}
+}
+
+// Endpoint para el Dashboard del Docente
+func handleDashboardWS(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	hub.Lock()
+	hub.dashboards[conn] = true
+	// Enviar snapshot actual al abrir la página
+	snap := EventMessage{
+		Type:     "SNAPSHOT",
+		Stations: hub.stations,
+	}
+	raw, _ := json.Marshal(snap)
+	_ = conn.WriteMessage(websocket.TextMessage, raw)
+	hub.Unlock()
+
+	// Mantener el socket vivo escuchando
+	for {
+		if _, _, err := conn.ReadMessage(); err != nil {
+			hub.Lock()
+			delete(hub.dashboards, conn)
+			hub.Unlock()
+			break
+		}
+	}
+}
+
+// Endpoint para el Agente (Laptops / VMs)
+func handleAgentWS(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	var deviceID, upn string
+
+	// 1. Recibir Handshake inicial
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		return
+	}
+
+	var initData map[string]string
+	if err := json.Unmarshal(message, &initData); err != nil {
+		return
+	}
+
+	deviceID = initData["device_id"]
+	upn = initData["upn"]
+
+	if deviceID == "" {
+		return
+	}
+
+	currentTime := time.Now().Format("15:04:05")
+
+	// Registrar en RAM
+	hub.Lock()
+	hub.stations[deviceID] = &Station{
+		DeviceID:    deviceID,
+		UPN:         upn,
+		Status:      "ONLINE",
+		ConnectedAt: currentTime,
+	}
+	hub.Unlock()
+
+	log.Printf("[TCP ESTABLECIDO] Estación: %s | Usuario: %s\n", deviceID, upn)
+
+	// Notificar al Dashboard que la estación está en ONLINE
+	hub.Broadcast(EventMessage{
+		Type:     "STATION_CHANGE",
+		DeviceID: deviceID,
+		UPN:      upn,
+		Status:   "ONLINE",
+		Time:     currentTime,
+	})
+
+	// 2. Control de enlace (Ping cada 3 segundos)
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	done := make(chan struct{})
+
+	// Rutina de lectura para atrapar TCP FIN / RST al instante
+	go func() {
+		defer close(done)
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				// Socket cerrado por el SO (Logoff, Shutdown, suspensión)
+				return
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-done:
+			// Desconexión detectada en menos de 50ms
+			goto Cleanup
+		case <-ticker.C:
+			// Enviar Ping nativo (Control Frame 0x09)
+			if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(2*time.Second)); err != nil {
+				goto Cleanup
+			}
+		}
+	}
+
+Cleanup:
+	hub.Lock()
+	if _, exists := hub.stations[deviceID]; exists {
+		hub.stations[deviceID].Status = "OFFLINE"
+	}
+	hub.Unlock()
+
+	log.Printf("[TCP CERRADO] Estación: %s desconectada.\n", deviceID)
+
+	// Notificar inmediatamente al dashboard cambio a OFFLINE
+	hub.Broadcast(EventMessage{
+		Type:     "STATION_CHANGE",
+		DeviceID: deviceID,
+		UPN:      upn,
+		Status:   "OFFLINE",
+		Time:     time.Now().Format("15:04:05"),
+	})
+}
+
+// Panel Web Embebido (HTML + Vanilla JS reactivo)
+func handleDashboardPage(w http.ResponseWriter, r *http.Request) {
+	html := `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SATP-Lab Monitoreo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 25px; margin: 0; }
+        h1 { margin: 0 0 5px 0; font-size: 24px; }
+        p { color: #94a3b8; margin: 0 0 20px 0; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+        .card { background: #1e293b; border: 2px solid #334155; border-radius: 8px; padding: 16px; transition: all 0.2s; }
+        .card.online { border-color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); }
+        .card.offline { border-color: #ef4444; opacity: 0.5; }
+        .badge { display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; }
+        .badge.online { background: #22c55e; color: #022c22; }
+        .badge.offline { background: #ef4444; color: #450a0a; }
+        .device { font-size: 18px; font-weight: bold; margin: 10px 0 4px 0; }
+        .upn { font-size: 13px; color: #cbd5e1; word-break: break-all; }
+        .time { font-size: 11px; color: #64748b; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h1>SATP-Lab — Telemetría de Red en Go</h1>
+    <p>Eventos de kernel TCP en tiempo real vía WebSockets</p>
+    <div id="grid" class="grid"></div>
+    <script>
+        const grid = document.getElementById("grid");
+        const stations = {};
+        const ws = new WebSocket("ws://" + location.host + "/ws/dashboard");
+
+        ws.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === "SNAPSHOT") {
+                Object.assign(stations, data.stations);
+            } else if (data.type === "STATION_CHANGE") {
+                stations[data.device_id] = {
+                    device_id: data.device_id,
+                    upn: data.upn,
+                    status: data.status,
+                    connected_at: data.time
+                };
+            }
+            render();
+        };
+
+        function render() {
+            grid.innerHTML = "";
+            const keys = Object.keys(stations);
+            if (!keys.length) {
+                grid.innerHTML = "<p style='color:#64748b'>Esperando conexiones de estaciones...</p>";
+                return;
+            }
+            keys.forEach(function(id) {
+                const s = stations[id];
+                const isOnline = s.status === "ONLINE";
+                const div = document.createElement("div");
+                div.className = "card " + (isOnline ? "online" : "offline");
+                div.innerHTML = 
+                    '<span class="badge ' + (isOnline ? "online" : "offline") + '">' + s.status + '</span>' +
+                    '<div class="device">' + s.device_id + '</div>' +
+                    '<div class="upn">' + s.upn + '</div>' +
+                    '<div class="time">' + (isOnline ? "Conectado a las: " + s.connected_at : "Desconectado") + '</div>';
+                grid.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>`
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, html)
+}
+
+func main() {
+	http.HandleFunc("/dashboard", handleDashboardPage)
+	http.HandleFunc("/ws/dashboard", handleDashboardWS)
+	http.HandleFunc("/ws/agent", handleAgentWS)
+
+	log.Println("[SERVIDOR GO] SATP-Lab Telemetry Core iniciado en :8000")
+	log.Println("[INFO] Abre http://localhost:8000/dashboard en tu navegador")
+	if err := http.ListenAndServe(":8000", nil); err != nil {
+		log.Fatalf("Error al arrancar: %v", err)
+	}
+}

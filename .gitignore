@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.env
+
+# Node / React
+node_modules/
+dist/
+.DS_Store
+
+# Go binaries
+*.exe
+*.exe~
+agent/satp-agent
+
+# Docker & Logs
+*.log
+.docker/

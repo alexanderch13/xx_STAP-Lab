@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db-postgres:
+    image: postgres:16-alpine
+    container_name: satp-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: satp_user
+      POSTGRES_PASSWORD: satp_password123
+      POSTGRES_DB: satp_lab_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  cache-redis:
+    image: redis:7.2-alpine
+    container_name: satp-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
