@@ -53,7 +53,7 @@ func main() {
 
 	// Configurar receptor de Ping nativo
 	conn.SetPingHandler(func(appData string) error {
-		return conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(2*time.Second))
+		return conn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(2*time.Second))
 	})
 
 	hostname, _ := os.Hostname()

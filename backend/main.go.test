@@ -146,12 +146,25 @@ func handleAgentWS(w http.ResponseWriter, r *http.Request) {
 
 	done := make(chan struct{})
 
-	// Rutina de lectura para atrapar TCP FIN / RST al instante
+	// Interceptar la respuesta PONG y calcular el RTT en milisegundos
+	conn.SetPongHandler(func(appData string) error {
+		var sentNano int64
+		if _, err := fmt.Sscanf(appData, "%d", &sentNano); err == nil {
+			rtt := time.Since(time.Unix(0, sentNano))
+			latencyMs := float64(rtt.Microseconds()) / 1000.0
+			log.Printf("[LATENCIA RTT] Estación: %s | %.2f ms\n", deviceID, latencyMs)
+		}
+		return nil
+	})
+
+	// Rutina de lectura para atrapar TCP FIN / RST al instante y procesar Pongs
 	go func() {
 		defer close(done)
 		for {
+			// ReadMessage despacha internamente los frames de control al PongHandler
 			_, _, err := conn.ReadMessage()
 			if err != nil {
+				// Socket cerrado por el SO (Logoff, Shutdown, suspensión)
 				return
 			}
 		}
@@ -160,10 +173,12 @@ func handleAgentWS(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-done:
+			// Desconexión detectada en menos de 50ms
 			goto Cleanup
 		case <-ticker.C:
-			// Enviar Ping nativo vacío (Control Frame 0x09)
-			if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(2*time.Second)); err != nil {
+			// Incrustar timestamp en nanosegundos en el payload del Ping (Control Frame 0x09)
+			payload := []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
+			if err := conn.WriteControl(websocket.PingMessage, payload, time.Now().Add(2*time.Second)); err != nil {
 				goto Cleanup
 			}
 		}
