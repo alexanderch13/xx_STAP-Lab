@@ -1,48 +1,105 @@
-import StatusDot from '@/features/shared/StatusDot'
-import DeviceBadge from './DeviceBadge'
+import type { FilaEstudiante } from '@/domain/academico'
 import { formatDuration } from '@/lib/utils'
-import type { Estudiante } from '../data/mock'
-
-export default function LiveTable({ rows }: { rows: Estudiante[] }) {
+import DeviceBadge from './DeviceBadge'
+import StatusDot from '@/features/shared/StatusDot'
+export default function LiveTable({
+  rows,
+  onConectar,
+  onDesconectar,
+}: {
+  rows: FilaEstudiante[]
+  onConectar: (id: string) => void
+  onDesconectar: (id: string) => void
+}) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
-      <table className="w-full text-sm">
+    <div className="table-wrap">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-[var(--border-color)] bg-[var(--bg-elevated)] text-left">
-            <th className="w-10 px-4 py-3"></th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Estudiante</th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Código</th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Laptop</th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Tipo</th>
-            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Tiempo</th>
+          <tr>
+            <th>Estado</th>
+            <th>Estudiante</th>
+            <th>Dispositivos conectados</th>
+            <th>Tiempo certificable</th>
+            <th>Acciones demo</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr
-              key={r.upn}
-              className={
-                'border-b border-[var(--border-color)] last:border-0 transition ' +
-                (r.activo
-                  ? 'bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08]'
-                  : 'opacity-60 hover:bg-[var(--bg-elevated)]')
-              }
-            >
-              <td className="px-4 py-3"><StatusDot active={r.activo} /></td>
-              <td className="px-4 py-3">
-                <p className="font-medium text-[var(--text-primary)]">{r.nombre}</p>
-                <p className="text-xs text-[var(--text-muted)]">{r.upn}</p>
+            <tr key={r.id}>
+              <td>
+                <div className="flex items-center gap-2">
+                  <StatusDot active={r.activo} />
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {r.activo ? 'Conectado' : 'Sin conexión'}
+                  </span>
+                </div>
               </td>
-              <td className="px-4 py-3 font-mono text-xs text-[var(--text-muted)]">{r.codigo}</td>
-              <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)]">
-                {r.estacion ?? '—'}
+              <td>
+                <p className="font-medium">{r.nombre}</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">{r.upn}</p>
+                <p className="mt-1 font-mono text-xs text-[var(--text-muted)]">
+                  {r.codigo}
+                </p>
               </td>
-              <td className="px-4 py-3"><DeviceBadge tipo={r.tipo} /></td>
-              <td className="px-4 py-3 text-right font-mono text-xs text-[var(--text-primary)]">
-                {r.activo ? formatDuration(r.segundosConectado) : '—'}
+              <td>
+                {r.conexiones.length ? (
+                  <div className="flex flex-col items-start gap-2">
+                    {r.conexiones.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2">
+                        <DeviceBadge tipo={c.tipo} />
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {c.equipo}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-[var(--text-muted)]">—</span>
+                )}
+              </td>
+              <td>
+                <p className="font-mono text-base font-medium tabular-nums">
+                  {formatDuration(r.segundosCertificables)}
+                </p>
+                {r.presenciaMovil &&
+                  !r.conexiones.some((c) => c.tipo !== 'MOVIL') && (
+                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      Móvil: solo presencia
+                    </p>
+                  )}
+              </td>
+              <td>
+                <div className="flex flex-col items-start gap-2">
+                  <button
+                    onClick={() => onConectar(r.id)}
+                    className="text-xs font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+                    aria-label={`Conectar dispositivo de ${r.nombre}`}
+                  >
+                    Conectar equipo
+                  </button>
+                  {r.activo && (
+                    <button
+                      onClick={() => onDesconectar(r.id)}
+                      className="text-xs text-[var(--text-muted)] hover:text-red-500"
+                      aria-label={`Desconectar dispositivos de ${r.nombre}`}
+                    >
+                      Desconectar
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
+          {rows.length === 0 && (
+            <tr>
+              <td
+                colSpan={5}
+                className="py-12 text-center text-[var(--text-muted)]"
+              >
+                No hay estudiantes que coincidan con la búsqueda.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

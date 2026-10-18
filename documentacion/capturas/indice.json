@@ -1,0 +1,173 @@
+[
+  {
+    "numero": 1,
+    "archivo": "figura-01-login-microsoft.png",
+    "documento": "figura-01-login-microsoft.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    }
+  },
+  {
+    "numero": 2,
+    "archivo": "figura-02-opciones-demostracion.png",
+    "documento": "figura-02-opciones-demostracion-detalle.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    }
+  },
+  {
+    "numero": 3,
+    "archivo": "figura-03-grupos-docente.png",
+    "documento": "figura-03-grupos-docente.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1073
+    }
+  },
+  {
+    "numero": 4,
+    "archivo": "figura-04-grupos-administrador.png",
+    "documento": "figura-04-grupos-administrador.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1114
+    }
+  },
+  {
+    "numero": 5,
+    "archivo": "figura-05-navegacion-tema-claro.png",
+    "documento": "figura-05-navegacion-tema-claro.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1073
+    }
+  },
+  {
+    "numero": 6,
+    "archivo": "figura-06-menu-movil.png",
+    "documento": "figura-06-menu-movil.png",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  {
+    "numero": 7,
+    "archivo": "figura-07-en-vivo.png",
+    "documento": "figura-07-en-vivo.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1772
+    }
+  },
+  {
+    "numero": 8,
+    "archivo": "figura-08-sesion-sin-iniciar.png",
+    "documento": "figura-08-sesion-sin-iniciar.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1584
+    }
+  },
+  {
+    "numero": 9,
+    "archivo": "figura-09-sesion-finalizada.png",
+    "documento": "figura-09-sesion-finalizada.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1772
+    }
+  },
+  {
+    "numero": 10,
+    "archivo": "figura-10-simular-conexion.png",
+    "documento": "figura-10-simular-conexion-detalle.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    }
+  },
+  {
+    "numero": 11,
+    "archivo": "figura-11-confirmar-fin-sesion.png",
+    "documento": "figura-11-confirmar-fin-sesion-detalle.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    }
+  },
+  {
+    "numero": 12,
+    "archivo": "figura-12-timeline.png",
+    "documento": "figura-12-timeline.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1805
+    }
+  },
+  {
+    "numero": 13,
+    "archivo": "figura-13-timeline-sin-sesion.png",
+    "documento": "figura-13-timeline-sin-sesion.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1073
+    }
+  },
+  {
+    "numero": 14,
+    "archivo": "figura-14-historial.png",
+    "documento": "figura-14-historial.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1610
+    }
+  },
+  {
+    "numero": 15,
+    "archivo": "figura-15-equipos.png",
+    "documento": "figura-15-equipos.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1201
+    }
+  },
+  {
+    "numero": 16,
+    "archivo": "figura-16-matricula.png",
+    "documento": "figura-16-matricula.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1592
+    }
+  },
+  {
+    "numero": 17,
+    "archivo": "figura-17-error-conexion-repetida.png",
+    "documento": "figura-17-error-conexion-repetida-detalle.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    }
+  },
+  {
+    "numero": 18,
+    "archivo": "figura-18-consulta-sin-resultados.png",
+    "documento": "figura-18-consulta-sin-resultados.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1073
+    }
+  },
+  {
+    "numero": 19,
+    "archivo": "figura-19-grupo-no-disponible.png",
+    "documento": "figura-19-grupo-no-disponible.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1073
+    }
+  }
+]

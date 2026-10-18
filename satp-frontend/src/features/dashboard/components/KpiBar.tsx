@@ -1,33 +1,35 @@
-import { Users, Wifi, WifiOff, Clock } from 'lucide-react'
-
+import { Clock, Laptop, Users, Wifi } from 'lucide-react'
 interface Props {
   matriculados: number
-  activos: number
-  offline: number
+  conectados: number
+  conEquipo: number
   tiempoPromedio: string
 }
-
-export default function KpiBar({ matriculados, activos, offline, tiempoPromedio }: Props) {
+export default function KpiBar({
+  matriculados,
+  conectados,
+  conEquipo,
+  tiempoPromedio,
+}: Props) {
   const items = [
-    { label: 'Matriculados', value: matriculados, icon: Users,    color: 'text-[var(--text-primary)]' },
-    { label: 'Activos',      value: activos,      icon: Wifi,     color: 'text-emerald-600 dark:text-emerald-400' },
-    { label: 'Offline',      value: offline,      icon: WifiOff,  color: 'text-[var(--text-muted)]' },
-    { label: 'Tiempo prom.', value: tiempoPromedio, icon: Clock,  color: 'text-emerald-600 dark:text-emerald-400' },
+    { label: 'Matriculados en el grupo', value: matriculados, icon: Users },
+    { label: 'Estudiantes conectados', value: conectados, icon: Wifi },
+    { label: 'Con equipo LAB / BYOD', value: conEquipo, icon: Laptop },
+    { label: 'Tiempo promedio del grupo', value: tiempoPromedio, icon: Clock },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {items.map(({ label, value, icon: Icon, color }) => (
-        <div
-          key={label}
-          className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {items.map(({ label, value, icon: Icon }) => (
+        <div key={label} className="panel p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs leading-relaxed text-[var(--text-muted)]">
               {label}
             </p>
-            <Icon className={`h-4 w-4 ${color}`} />
+            <Icon className="h-4 w-4 shrink-0 text-emerald-500" />
           </div>
-          <p className={`mt-1 text-xl font-semibold ${color}`}>{value}</p>
+          <p className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {value}
+          </p>
         </div>
       ))}
     </div>

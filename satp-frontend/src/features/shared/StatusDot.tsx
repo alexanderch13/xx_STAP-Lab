@@ -1,6 +1,12 @@
 import { cn } from '@/lib/utils'
 
-export default function StatusDot({ active, className }: { active: boolean; className?: string }) {
+export default function StatusDot({
+  active,
+  className,
+}: {
+  active: boolean
+  className?: string
+}) {
   return (
     <span className={cn('relative flex h-2.5 w-2.5', className)}>
       {active && (

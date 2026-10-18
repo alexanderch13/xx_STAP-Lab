@@ -1,64 +1,91 @@
-import { useMemo } from 'react'
+import type { FilaEstudiante, Sesion } from '@/domain/academico'
 import { formatDuration } from '@/lib/utils'
-import type { Estudiante } from '../data/mock'
-
-const DURACION_BLOQUE = 7200 // 2 h en segundos
-
-export default function TimelineView({ rows }: { rows: Estudiante[] }) {
-  const activos = useMemo(() => rows.filter((r) => r.activo), [rows])
-
-  if (activos.length === 0) {
+export default function TimelineView({
+  rows,
+  sesion,
+  ahora,
+}: {
+  rows: FilaEstudiante[]
+  sesion: Sesion
+  ahora: number
+}) {
+  if (sesion.inicio === null)
     return (
-      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-10 text-center">
-        <p className="text-sm text-[var(--text-muted)]">
-          Aún no hay actividad registrada para graficar el timeline.
-        </p>
+      <div className="panel p-10 text-center text-[var(--text-muted)]">
+        Inicia una sesión para registrar intervalos en el timeline.
       </div>
     )
-  }
-
+  const inicio = sesion.inicio
+  const ancho = Math.max(
+    sesion.duracionSeg * 1000,
+    (sesion.fin ?? ahora) - inicio,
+  )
   return (
-    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-5">
-      <div className="mb-4 flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-        <span>Inicio</span>
-        <span>30 min</span>
-        <span>1 h</span>
-        <span>1 h 30</span>
-        <span>Fin (2 h)</span>
-      </div>
-
-      <div className="space-y-3">
-        {activos.map((r) => {
-          const pct = Math.min(100, (r.segundosConectado / DURACION_BLOQUE) * 100)
-          return (
-            <div key={r.upn} className="grid grid-cols-[180px_1fr_80px] items-center gap-3">
-              <div className="truncate">
-                <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+    <div className="panel overflow-x-auto p-5 sm:p-6">
+      <div className="min-w-[650px]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold">Intervalos de conexión certificable</h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            LAB / BYOD · Las interrupciones se conservan
+          </p>
+        </div>
+        <div className="mb-4 ml-[190px] mr-24 flex justify-between font-mono text-xs text-[var(--text-muted)]">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i}>{Math.round(((ancho / 1000 / 60) * i) / 4)} min</span>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              className="grid grid-cols-[175px_1fr_80px] items-center gap-4"
+            >
+              <div>
+                <p className="truncate text-sm font-medium" title={r.nombre}>
                   {r.nombre}
                 </p>
-                <p className="truncate text-[10px] text-[var(--text-muted)]">
-                  {r.estacion}
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {r.activo ? 'Conectado' : 'Sin conexión'}
                 </p>
               </div>
-
-              <div className="relative h-6 overflow-hidden rounded-md bg-[var(--bg-elevated)]">
-                <div className="absolute inset-0 grid grid-cols-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="border-r border-[var(--border-color)]" />
-                  ))}
-                </div>
-                <div
-                  className="relative h-full rounded-md bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_12px_-2px_rgba(16,185,129,0.6)] transition-[width] duration-700"
-                  style={{ width: `${pct}%` }}
-                />
+              <div className="relative h-8 overflow-hidden rounded-lg bg-[var(--bg-elevated)]">
+                {[25, 50, 75].map((p) => (
+                  <div
+                    key={p}
+                    className="absolute inset-y-0 border-l border-[var(--border-color)]"
+                    style={{ left: `${p}%` }}
+                  />
+                ))}
+                {r.intervalos.map((i, n) => (
+                  <div
+                    key={`${i.inicio}-${n}`}
+                    title={`${formatDuration((i.fin - i.inicio) / 1000)} certificables`}
+                    className="absolute inset-y-1 rounded bg-emerald-500"
+                    style={{
+                      left: `${((i.inicio - inicio) / ancho) * 100}%`,
+                      width: `${Math.max(0.25, ((i.fin - i.inicio) / ancho) * 100)}%`,
+                    }}
+                  />
+                ))}
+                {!r.intervalos.length && (
+                  <span className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-muted)]">
+                    {r.presenciaMovil
+                      ? 'Móvil: solo presencia'
+                      : 'Sin tiempo registrado'}
+                  </span>
+                )}
               </div>
-
-              <p className="text-right font-mono text-xs text-[var(--text-primary)]">
-                {formatDuration(r.segundosConectado)}
-              </p>
+              <span className="text-right font-mono text-xs">
+                {formatDuration(r.segundosCertificables)}
+              </span>
             </div>
-          )
-        })}
+          ))}
+        </div>
+        {rows.length === 0 && (
+          <p className="py-10 text-center text-[var(--text-muted)]">
+            Este grupo no tiene estudiantes matriculados.
+          </p>
+        )}
       </div>
     </div>
   )

@@ -11,8 +11,9 @@ interface UiState {
 export const useUiStore = create<UiState>()(
   persist(
     (set, get) => ({
-      theme: 'light',
-      toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
+      theme: 'dark',
+      toggleTheme: () =>
+        set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
     }),
     { name: 'satp-ui' },
   ),

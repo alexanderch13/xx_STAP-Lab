@@ -23,6 +23,14 @@ version: v1.0.0-rc1
 
 # SATP-Lab: Sistema Ciberfísico de Telemetría y Certificación de Trabajo Activo en Laboratorios
 
+## Frontend de esta presentación
+
+Para revisar las interfaces React documentadas en esta entrega, abre **LEEME_FRONTEND.md** y ejecuta **iniciar_frontend.cmd** en Windows. La aplicación está en `satp-frontend` y se inicia con `npm ci` y `npm run dev` desde esa carpeta.
+
+El frontend utiliza datos ficticios y muestra **Iniciar sesión con Microsoft** como acceso principal simulado. El informe y las capturas de la misma versión están en `documentacion`. La integración con Microsoft, la base de datos y el servidor se realizará después.
+
+Las secciones siguientes documentan el núcleo Go y su panel del puerto 8000. Ese panel es distinto del frontend React de esta presentación.
+
 > [!NOTE]
 > **Resumen Ejecutivo:**  
 > Plataforma distribuida de telemetría de red y auditoría continua diseñada para la **certificación determinística de presencia y trabajo efectivo** en estaciones de cómputo universitarias. Sustituye los esquemas analógicos de firmas en papel y formularios web por un modelo autónomo de bajo nivel desarrollado en **Go 1.22+** y sustentado en el protocolo **WebSockets (RFC 6455)**, garantizando consumo de ancho de banda insignificante y respuesta sub-milisegundo ante eventos del kernel del sistema operativo.

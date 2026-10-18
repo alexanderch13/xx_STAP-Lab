@@ -1,48 +1,66 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Maximize2, User } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Maximize2, Menu, User } from 'lucide-react'
 import ThemeToggle from '@/features/shared/ThemeToggle'
-
-export default function TopBar() {
+import { useAuth } from '@/auth/useAuth'
+export default function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const params = useParams()
-  const enDashboard = !!params.aulaId
-
+  const { aulaId } = useParams()
+  const usuario = useAuth((s) => s.usuario)!
+  const [error, setError] = useState('')
+  async function pantallaCompleta() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await document.documentElement.requestFullscreen()
+      setError('')
+    } catch {
+      setError('Tu navegador no permite activar pantalla completa.')
+    }
+  }
   return (
-    <header
-      className="
-        flex h-14 shrink-0 items-center justify-between gap-4
-        border-b border-emerald-500/20
-        bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700
-        px-4 text-emerald-50
-        shadow-[0_1px_0_0_rgba(255,255,255,0.06)]
-      "
-    >
-      <div className="flex items-center gap-3">
-        {enDashboard && (
+    <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-emerald-500/20 bg-emerald-700 px-4 text-emerald-50 sm:px-6">
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          onClick={onOpenMenu}
+          aria-label="Abrir menú"
+          className="rounded-lg p-2 hover:bg-white/10 lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        {aulaId && (
           <button
             onClick={() => navigate('/app/aulas')}
-            className="rounded-md p-1.5 transition hover:bg-emerald-500/30"
-            aria-label="Volver"
+            aria-label="Volver a los grupos"
+            className="rounded-lg p-2 hover:bg-white/10"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
         )}
-        <span className="text-sm font-medium">
-          {enDashboard ? 'Monitoreo de aula' : 'Sistema de Telemetría · SATP-Lab'}
+        <span className="truncate text-sm font-semibold sm:text-base">
+          {aulaId
+            ? 'Supervisión de laboratorio'
+            : 'Sistema de Telemetría · SATP-Lab'}
         </span>
       </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle variant="dark" />
-        <button className="rounded-md p-1.5 transition hover:bg-emerald-500/30">
-          <Maximize2 className="h-4 w-4" />
+        <button
+          onClick={pantallaCompleta}
+          title={error || 'Pantalla completa'}
+          aria-label="Pantalla completa"
+          className="hidden rounded-lg p-2 hover:bg-white/10 sm:block"
+        >
+          <Maximize2 className="h-5 w-5" />
         </button>
-        <div className="ml-1 flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-            <User className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
+          <User className="h-4 w-4" />
+          <div className="hidden leading-tight md:block">
+            <p className="text-sm font-medium">{usuario.nombre}</p>
+            <p className="mt-0.5 text-xs text-emerald-100/80">
+              {usuario.rol === 'administrador' ? 'Administrador' : 'Docente'} ·
+              Demo
+            </p>
           </div>
-          <span className="text-xs font-medium">Ing. Docente</span>
         </div>
       </div>
     </header>

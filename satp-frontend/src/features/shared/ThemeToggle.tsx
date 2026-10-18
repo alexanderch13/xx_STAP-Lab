@@ -2,7 +2,11 @@ import { useEffect } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useUiStore } from '@/stores/uiStore'
 
-export default function ThemeToggle({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
+export default function ThemeToggle({
+  variant = 'light',
+}: {
+  variant?: 'light' | 'dark'
+}) {
   const { theme, toggleTheme } = useUiStore()
 
   useEffect(() => {
@@ -19,9 +23,11 @@ export default function ThemeToggle({ variant = 'light' }: { variant?: 'light' |
           : 'rounded-md p-2 transition hover:bg-[var(--bg-elevated)]'
       }
     >
-      {theme === 'dark'
-        ? <Sun className="h-4 w-4" />
-        : <Moon className="h-4 w-4" />}
+      {theme === 'dark' ? (
+        <Sun className="h-4 w-4" />
+      ) : (
+        <Moon className="h-4 w-4" />
+      )}
     </button>
   )
 }
